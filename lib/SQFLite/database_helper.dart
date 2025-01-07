@@ -87,4 +87,24 @@ class DatabaseHelper {
       return [];
     }
   }
+
+  Future<UserDetails?> getUserByEmail(String email) async {
+    try {
+      final db = await database;
+
+      final List<Map<String, dynamic>> maps = await db.query(
+        'user_details',
+        where: 'email = ?',
+        whereArgs: [email],
+      );
+
+      if (maps.isNotEmpty) {
+        return UserDetails.fromMap(maps.first);
+      }
+    } catch (e) {
+      print('Error retrieving user by email: $e');
+      return null; 
+    }
+    return null;
+  }
 }

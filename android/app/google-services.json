@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1086676550844",
+    "project_id": "florante-17560",
+    "storage_bucket": "florante-17560.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1086676550844:android:6f7a842f1542e82ab93cb9",
+        "android_client_info": {
+          "package_name": "com.example.florante"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCgwjpBu-qIeqfuc8bZnM3KA6dHcKF2tvw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

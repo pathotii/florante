@@ -21,12 +21,12 @@ class _LoginViewState extends State<LoginView> {
   final _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool isPasswordVisible = false;
-  bool keepMeLoggedIn = false; // For the "Keep me logged in" checkbox
+  bool keepMeLoggedIn = false;
 
   @override
   void initState() {
     super.initState();
-    _checkLoginStatus(); // Check if the user is already logged in
+    _checkLoginStatus();
   }
 
   @override
@@ -47,7 +47,7 @@ class _LoginViewState extends State<LoginView> {
                   Padding(
                     padding: EdgeInsets.only(top: media.width * 0.07),
                     child: Text(
-                      "Kumusta,",
+                      "Kumusta?",
                       style: TextStyle(color: TColor.gray, fontSize: 16),
                     ),
                   ),
@@ -124,7 +124,7 @@ class _LoginViewState extends State<LoginView> {
                           });
                         },
                       ),
-                      const Text("Keep me logged in"),
+                      const Text("Panatilihing naka-login ang User"),
                     ],
                   ),
                   Row(
@@ -148,38 +148,50 @@ class _LoginViewState extends State<LoginView> {
                     type: RoundButtonType.bgGradient,
                     onPressed: () async {
                       if (_formKey.currentState!.validate()) {
+                        print("Form validated, attempting login...");
                         final email = _emailController.text;
                         final password = _passwordController.text;
 
-                        // Your login validation logic
+                        // Validate login and get the user type
                         final userType = await _validateLogin(email, password);
+
                         if (userType != null) {
+                          print("Login successful, userType: $userType");
+
+                          // Proceed with login: Store the email and isLoggedIn status in SharedPreferences
                           SharedPreferences prefs =
                               await SharedPreferences.getInstance();
 
-                          // Save the login status and user token
-                          await prefs.setBool('isLoggedIn', true);
-                          await prefs.setString(
-                              'userToken', 'some_unique_token');
+                          // Save email to check login status later
+                          await prefs.setString('email', email);
 
-                          // Save 'keep me logged in' state if checked
-                          if (keepMeLoggedIn) {
-                            await prefs.setBool('keepMeLoggedIn', true);
+                          // Save isLoggedIn flag based on whether 'Keep me logged in' is checked
+                          await prefs.setBool('isLoggedIn', keepMeLoggedIn);
+
+                          // Fetch the firstName from the database
+                          DatabaseHelper dbHelper = DatabaseHelper();
+                          UserDetails? userDetails =
+                              await dbHelper.getUserByEmail(email);
+
+                          if (userDetails != null) {
+                            // Navigate to the correct home page with the firstName
+                            Navigator.pushAndRemoveUntil(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    Home(firstName: userDetails.firstName, email: userDetails.email,),
+                              ),
+                              (Route<dynamic> route) =>
+                                  false, // Clear navigation stack
+                            );
+                          } else {
+                            print('User not found in the database');
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Kumusta Po? Guro')),
+                            );
                           }
-
-                          Navigator.pushAndRemoveUntil(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) {
-                                return userType == 'Student'
-                                    ? const Home(firstName: 'Patrick',)
-                                    : const Home(firstName: 'Patrick',);
-                              },
-                            ),
-                            (Route<dynamic> route) => false,
-                          );
                         } else {
-                          // Show error message if login is invalid
+                          print("Login failed, invalid credentials");
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
                                 content: Text('Invalid email or password')),
@@ -235,28 +247,105 @@ class _LoginViewState extends State<LoginView> {
 
   Future<void> _checkLoginStatus() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    bool isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
-    bool keepMeLoggedIn = prefs.getBool('keepMeLoggedIn') ?? false;
 
-    if (isLoggedIn && keepMeLoggedIn) {
-      // Automatically log in if 'Keep me logged in' was selected
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const Home(firstName: '',)),
+    // Retrieve the stored email and login status from SharedPreferences
+    String email = prefs.getString('email') ??
+        ''; // If email is not set, it defaults to an empty string
+    bool isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
+
+    // Only proceed if both isLoggedIn and email exist
+    if (isLoggedIn && email.isNotEmpty) {
+      // Check if the email belongs to the teacher (teacher has no account in the database)
+      if (email == 'florante_educ2024@gmail.com') {
+        // Show a Snackbar indicating navigating to the Teacher side
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Navigating to the Teacher side...'),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        // Delay the navigation by 2 seconds
+        await Future.delayed(const Duration(seconds: 2));
+
+        // Navigate to TeacherHome
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const TeacherHome(),
+          ),
+        );
+      } else {
+        // Fetch the user details from the database for a regular user (Student)
+        DatabaseHelper dbHelper = DatabaseHelper();
+        UserDetails? userDetails = await dbHelper.getUserByEmail(email);
+
+        if (userDetails != null) {
+          // Show a Snackbar indicating navigating to the Student side
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Navigating to the Student side...'),
+              backgroundColor: Colors.blue,
+            ),
+          );
+
+          // Delay the navigation by 2 seconds
+          await Future.delayed(const Duration(seconds: 2));
+
+          // Navigate to Home for the student with the first name
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => Home(firstName: userDetails.firstName, email: userDetails.email,),
+            ),
+          );
+        } else {
+          // Show a Snackbar if the user is not found in the database
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('User not found in the database'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } else {
+      // If no email or isLoggedIn is false, prompt for login
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please keep your account "Logged In" first'),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }
 
   Future<String?> _validateLogin(String email, String password) async {
-    final dbHelper = DatabaseHelper();
-    List<UserDetails> userList = await dbHelper.users();
+    // Pre-saved teacher credentials
+    const String teacherEmail = 'florante_educ2024@gmail.com';
+    const String teacherPassword = 'florante2024';
 
-    for (var user in userList) {
-      if (user.email == email && user.password == password) {
-        return user.userType;
-      }
+    // Check if the entered email and password match the teacher's credentials
+    if (email == teacherEmail && password == teacherPassword) {
+      // If credentials match, navigate to TeacherHome
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const TeacherHome()),
+      );
+      return 'Teacher';
     }
-    return null; 
+
+    final db = await DatabaseHelper().database;
+    final List<Map<String, dynamic>> result = await db.query(
+      'user_details',
+      where: 'email = ? AND password = ?',
+      whereArgs: [email, password],
+    );
+
+    if (result.isNotEmpty) {
+      return result.first['user_type'];
+    }
+    return null;
   }
 
   @override

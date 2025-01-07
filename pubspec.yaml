@@ -14,6 +14,14 @@ dependencies:
   email_validator: ^3.0.0
   sqflite: ^2.0.0+4
   shared_preferences: ^2.1.1
+  flip_card: ^0.5.0
+  carousel_slider: ^4.1.1
+  firebase_storage: ^11.0.0
+  firebase_core: ^2.18.0
+  firebase_auth: ^4.14.0
+  cloud_firestore: ^4.6.0
+  flutter_launcher_icons: ^0.13.1
+  intl: ^0.20.1
 
 dev_dependencies:
   flutter_test:
@@ -33,3 +41,16 @@ flutter:
           weight: 500
         - asset: assets/fonts/Poppins-Bold.ttf
           weight: 700
+
+    - family: AnandaBlack
+      fonts:
+        - asset: assets/fonts/AnandaBlackPersonalUseRegular-rg9Rx.ttf
+
+    - family: Blacksword
+      fonts:
+        - asset: assets/fonts/Blacksword.otf
+  
+flutter_icons:
+    android: true
+    ios: true
+    image_path: "assets/images/LOGO.png"

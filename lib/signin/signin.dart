@@ -4,7 +4,6 @@ import '../../common_widget/round_button.dart';
 import '../../common_widget/round_textfield.dart';
 import '../../SQFLite/database_helper.dart';
 import 'package:email_validator/email_validator.dart';
-
 import '../common_widget/round_dropdown.dart';
 import '../database_table/user_details.dart';
 import '../home/home.dart';
@@ -45,7 +44,7 @@ class _SignUpViewState extends State<SignUpView> {
                   Padding(
                     padding: EdgeInsets.only(top: media.width * 0.07),
                     child: Text(
-                      "Kumusta,",
+                      "Kumusta?",
                       style: TextStyle(color: TColor.gray, fontSize: 16),
                     ),
                   ),
@@ -76,7 +75,7 @@ class _SignUpViewState extends State<SignUpView> {
                   ),
                   SizedBox(height: media.width * 0.01),
                   RoundTextField(
-                    hitText: "First Name",
+                    hitText: "Pangalang Ginagamit",
                     icon: "assets/images/user_text.png",
                     controller: _firstNameController,
                     validator: (value) {
@@ -88,7 +87,7 @@ class _SignUpViewState extends State<SignUpView> {
                   ),
                   SizedBox(height: media.width * 0.04),
                   RoundTextField(
-                    hitText: "Last Name",
+                    hitText: "Apelyido",
                     icon: "assets/images/user_text.png",
                     controller: _lastNameController,
                     validator: (value) {
@@ -183,18 +182,32 @@ class _SignUpViewState extends State<SignUpView> {
 
                         // Call the database helper to insert user details
                         DatabaseHelper dbHelper = DatabaseHelper();
-                        await dbHelper.insertUserDetails(userDetails);
 
+                        // Check if the email already exists
+                        final existingUsers = await dbHelper.fetchUsers();
+                        bool emailExists = existingUsers.any(
+                            (user) => user['email'] == _emailController.text);
+
+                        if (emailExists) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                                content: Text('Email already registered!')),
+                          );
+                          return;
+                        }
+
+                        await dbHelper.insertUserDetails(userDetails);
                         print("User Registered: ");
                         print("First Name: ${userDetails.firstName}");
                         print("Last Name: ${userDetails.lastName}");
                         print("Email: ${userDetails.email}");
                         print("User Type: ${userDetails.userType}");
 
-                        Navigator.pushReplacement(context,
+                        Navigator.pushReplacement(
+                          context,
                           MaterialPageRoute(
                               builder: (context) => Home(
-                                    firstName: _firstNameController.text,
+                                    firstName: _firstNameController.text, email: _emailController.text,
                                   )),
                         );
                       }
@@ -204,7 +217,10 @@ class _SignUpViewState extends State<SignUpView> {
                   TextButton(
                     onPressed: () async {
                       DatabaseHelper dbHelper = DatabaseHelper();
-                      await dbHelper.fetchUsers();
+                      List<Map<String, dynamic>> users =
+                          await dbHelper.fetchUsers();
+                          
+                      print(users);
 
                       Navigator.push(
                         context,
@@ -229,7 +245,7 @@ class _SignUpViewState extends State<SignUpView> {
                               color: TColor.black,
                               fontSize: 14,
                               fontWeight: FontWeight.w700),
-                        )
+                        ),
                       ],
                     ),
                   ),
